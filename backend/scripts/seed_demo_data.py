@@ -83,6 +83,38 @@ async def seed():
                 view_count=21,
                 solve_count=16,
             ),
+            KnowledgeArticle(
+                title='化学实验室VOC超阈值处置',
+                keywords='VOC,化学,通风,泄漏,实验室安全',
+                content='立即停止相关实验并开启最大通风；排查试剂容器密封；确认现场人员防护到位；完成复测后恢复实验。',
+                category='teaching_support',
+                view_count=15,
+                solve_count=11,
+            ),
+            KnowledgeArticle(
+                title='夜间无人值守异常入侵处理流程',
+                keywords='夜间,入侵,门禁,巡检,告警',
+                content='先远程确认监控画面与门禁记录；通知值班人员到场核验；必要时升级保卫处；事后补全事件记录。',
+                category='lab_support',
+                view_count=12,
+                solve_count=9,
+            ),
+            KnowledgeArticle(
+                title='实验室有害气体异常巡检清单',
+                keywords='气体,巡检,阈值,实验室,报警',
+                content='检查探测器在线状态；核对阈值配置；排查通风与门窗状态；确认安全员通知链路。',
+                category='teaching_support',
+                view_count=15,
+                solve_count=11,
+            ),
+            KnowledgeArticle(
+                title='门禁与监控联动异常快速恢复',
+                keywords='门禁,监控,联动,离线,恢复',
+                content='先重连门禁控制器，再验证摄像头流状态；必要时切换备用控制节点并记录处置。',
+                category='lab_support',
+                view_count=19,
+                solve_count=14,
+            ),
         ]
         db.add_all(knowledge)
         await db.flush()
@@ -158,6 +190,62 @@ async def seed():
                 reporter_id=2005,
                 created_at=now - timedelta(minutes=6),
                 updated_at=now - timedelta(minutes=6),
+            ),
+            Ticket(
+                title='化学实验室VOC浓度异常升高',
+                description='晚间巡检发现VOC持续超阈值，需立即排查通风与试剂容器。',
+                category='lab_support',
+                severity='high',
+                status='assigned',
+                location='化学楼2层A-205',
+                reporter_id=2006,
+                assignee_id=1002,
+                eta_minutes=6,
+                due_at=now + timedelta(minutes=6),
+                created_at=now - timedelta(minutes=12),
+                updated_at=now - timedelta(minutes=5),
+            ),
+            Ticket(
+                title='机器人社团赛前控制台断连',
+                description='比赛彩排中控制台与主机连接中断，影响调试进度。',
+                category='club_support',
+                severity='medium',
+                status='in_progress',
+                location='创新中心B-101',
+                reporter_id=2007,
+                assignee_id=1003,
+                eta_minutes=4,
+                due_at=now + timedelta(minutes=4),
+                created_at=now - timedelta(minutes=16),
+                updated_at=now - timedelta(minutes=3),
+            ),
+            Ticket(
+                title='化学实验室VOC浓度短时升高',
+                description='VOC探测器连续3次触发阈值，疑似通风不足。',
+                category='teaching_support',
+                severity='medium',
+                status='in_progress',
+                location='化学楼C-207',
+                reporter_id=2006,
+                assignee_id=1001,
+                eta_minutes=7,
+                due_at=now + timedelta(minutes=7),
+                created_at=now - timedelta(minutes=32),
+                updated_at=now - timedelta(minutes=5),
+            ),
+            Ticket(
+                title='机房A UPS电源告警',
+                description='UPS负载波动，存在短时断电风险。',
+                category='lab_support',
+                severity='high',
+                status='waiting_acceptance',
+                location='机房A',
+                reporter_id=2007,
+                assignee_id=1002,
+                eta_minutes=10,
+                due_at=now - timedelta(minutes=2),
+                created_at=now - timedelta(minutes=54),
+                updated_at=now - timedelta(minutes=12),
             ),
         ]
         db.add_all(tickets)
@@ -319,6 +407,26 @@ async def seed():
                 current_value=126,
                 status='active',
                 created_at=now - timedelta(minutes=8),
+            ),
+            Alert(
+                alert_type='voc',
+                severity='warning',
+                title='VOC浓度偏高预警',
+                message='化学楼A-205近10分钟VOC持续高位，请立即排查通风系统。',
+                threshold_value=80,
+                current_value=103,
+                status='active',
+                created_at=now - timedelta(minutes=6),
+            ),
+            Alert(
+                alert_type='device_offline',
+                severity='critical',
+                title='实验室核心设备离线',
+                message='创新中心B-101核心控制主机离线，可能影响赛前调试。',
+                threshold_value=0,
+                current_value=1,
+                status='active',
+                created_at=now - timedelta(minutes=4),
             ),
         ]
         db.add_all(alerts)
@@ -514,6 +622,88 @@ async def seed():
             AICallLog(scene='intake', engine='rule', source='rule_engine', fallback=True, latency_ms=120, success=True, message='llm disabled once', created_at=now - timedelta(minutes=12)),
         ]
         db.add_all(ai_logs)
+
+        # 额外补充：每个模块再增加少量测试数据（便于演示）
+        extra_knowledge = [
+            KnowledgeArticle(
+                title='危化品柜温湿度异常处置',
+                keywords='危化品,温湿度,告警,实验室',
+                content='确认柜门闭合与电源；检查除湿模块；必要时转移试剂并上报。',
+                category='lab_support',
+                view_count=12,
+                solve_count=9,
+            ),
+            KnowledgeArticle(
+                title='实验课设备批量离线应急清单',
+                keywords='设备离线,课堂,交换机,排查',
+                content='先检查供电和上联口，再执行批量重连，最后通知授课教师。',
+                category='teaching_support',
+                view_count=16,
+                solve_count=11,
+            ),
+        ]
+        db.add_all(extra_knowledge)
+
+        extra_tickets = [
+            Ticket(
+                title='化学实验室VOC瞬时升高',
+                description='通风柜附近VOC读数连续3次超阈值，需现场核查。',
+                category='lab_support',
+                severity='high',
+                status='assigned',
+                location='化学楼C-214',
+                reporter_id=2011,
+                assignee_id=1002,
+                eta_minutes=7,
+                due_at=now + timedelta(minutes=7),
+                created_at=now - timedelta(minutes=12),
+                updated_at=now - timedelta(minutes=6),
+            ),
+            Ticket(
+                title='社团活动厅无线麦克风干扰',
+                description='活动彩排中出现断续噪声，需快速排障。',
+                category='club_support',
+                severity='medium',
+                status='pending',
+                location='学生活动中心B厅',
+                reporter_id=2012,
+                created_at=now - timedelta(minutes=9),
+                updated_at=now - timedelta(minutes=9),
+            ),
+        ]
+        db.add_all(extra_tickets)
+        await db.flush()
+
+        extra_events = [
+            TicketEvent(ticket_id=extra_tickets[0].id, actor_id=2011, event_type='created', content='工单已创建：化学实验室VOC瞬时升高', created_at=now - timedelta(minutes=12)),
+            TicketEvent(ticket_id=extra_tickets[0].id, actor_id=1002, event_type='assigned', content='已派单给值班员 1002', created_at=now - timedelta(minutes=10)),
+            TicketEvent(ticket_id=extra_tickets[1].id, actor_id=2012, event_type='created', content='工单已创建：社团活动厅无线麦克风干扰', created_at=now - timedelta(minutes=9)),
+        ]
+        db.add_all(extra_events)
+
+        extra_alerts = [
+            Alert(
+                alert_type='voc',
+                severity='warning',
+                title='VOC读数短时波动',
+                message='化学楼C-214连续检测到VOC波动，建议现场复核通风状态。',
+                threshold_value=60,
+                current_value=73,
+                status='active',
+                created_at=now - timedelta(minutes=16),
+            ),
+            Alert(
+                alert_type='device_offline',
+                severity='info',
+                title='实验终端离线提醒',
+                message='3教401有2台实验终端离线，建议课前巡检。',
+                threshold_value=1,
+                current_value=2,
+                status='active',
+                created_at=now - timedelta(minutes=11),
+            ),
+        ]
+        db.add_all(extra_alerts)
 
         await db.commit()
         print('Demo data seeded successfully (tickets/knowledge/optimization/duty/ratings/slow_queries/snapshots/alerts/ops/ai_logs).')

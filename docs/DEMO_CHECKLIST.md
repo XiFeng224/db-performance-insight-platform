@@ -2,8 +2,9 @@
 
 ## 启动前
 - [ ] `backend/.env` 已配置 `LLM_ENABLED=true` 与有效 `QWEN_API_KEY`
-- [ ] 网络可访问 DashScope
+- [ ] 网络可访问 DashScope（若不可访问，演示规则回退）
 - [ ] 端口 8000 / 5173 空闲
+- [ ] 已确认品牌标题：`智值守 - 校园实验室智能应急协作平台`
 
 ## 一键启动
 - [ ] 在项目根目录执行 `start.bat`
@@ -11,7 +12,9 @@
 - [ ] 前端可访问：`http://localhost:5173`
 
 ## 数据准备
+- [ ] 已执行 `backend/scripts/seed_demo_data.py`（每个模块至少3条）
 - [ ] 工单中心有多状态样例（pending/assigned/in_progress/waiting_acceptance/closed）
+- [ ] 告警中心有 critical/warning/info 样例
 - [ ] 优化建议页有 todo/doing/verifying/done 样例
 - [ ] 知识库有课堂/机房/社团案例
 

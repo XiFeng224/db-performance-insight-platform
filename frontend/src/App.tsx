@@ -126,16 +126,16 @@ const App: React.FC = () => {
           alignItems: 'center',
           justifyContent: 'center',
           background:
-            'radial-gradient(1200px 600px at 10% -15%, #dbeafe 0%, transparent 52%), radial-gradient(960px 520px at 95% -20%, #ffe7d1 0%, transparent 48%), linear-gradient(180deg, #f8fbff 0%, #f2f7ff 45%, #edf4ff 100%)',
+            'radial-gradient(1000px 520px at -10% -20%, #2e5bcf66 0%, transparent 60%), radial-gradient(880px 460px at 95% -20%, #4f6fe840 0%, transparent 58%), linear-gradient(120deg, #0b1f5a 0%, #173a90 52%, #2153c6 100%)',
         }}
       >
         <Card
           style={{
             width: 420,
             borderRadius: 14,
-            background: '#ffffffd9',
-            border: '1px solid #e5e7eb',
-            boxShadow: '0 10px 30px rgba(79,70,229,0.08)',
+            background: '#ffffffea',
+            border: '1px solid #c9dafd',
+            boxShadow: '0 12px 34px rgba(8,38,112,0.26)',
             backdropFilter: 'blur(6px)',
           }}
         >
