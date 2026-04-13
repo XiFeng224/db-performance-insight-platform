@@ -76,7 +76,7 @@ const HomePortal: React.FC = () => {
           <Space align="center" wrap>
             <Avatar size={44} style={{ backgroundColor: '#2563eb' }} icon={<SafetyCertificateOutlined />} />
             <div>
-              <Title level={2} style={{ margin: 0 }}>智值守 - 校园实验室智能应急协作平台</Title>
+              <Title level={2} style={{ margin: 0, color: '#ffffff' }}>智值守 - 校园实验室智能应急协作平台</Title>
               <Text style={{ color: '#cbd5e1' }}>Smart Campus Emergency Collaboration Platform</Text>
             </div>
           </Space>
