@@ -1,10 +1,10 @@
-import { defineConfig } from 'vite'
-import react from '@vitejs/plugin-react'
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
   server: {
-    port: 3000,
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
@@ -12,4 +12,16 @@ export default defineConfig({
       },
     },
   },
-})
+  build: {
+    chunkSizeWarningLimit: 1200,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          antd: ['antd', '@ant-design/icons'],
+          charts: ['echarts', 'echarts-for-react', 'recharts'],
+          vendor: ['react', 'react-dom', 'react-router-dom', 'axios', 'dayjs', 'lodash'],
+        },
+      },
+    },
+  },
+});

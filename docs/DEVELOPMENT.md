@@ -10,14 +10,15 @@
 
 ```bash
 cd backend
-python -m venv venv
+python -m venv .venv
 # Windows
-venv\Scripts\activate
+.venv\Scripts\activate
 # Linux/Mac
-# source venv/bin/activate
+# source .venv/bin/activate
 
 python -m pip install --upgrade pip
 pip install -r requirements.txt
+python scripts/seed_demo_data.py
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
@@ -36,7 +37,8 @@ npm run dev
 ```text
 backend/app/
 ├── api/
-│   ├── ai.py
+│   ├── assistant.py        # AI问答/受理/交接
+│   ├── tickets.py          # 工单全流程
 │   ├── ops.py              # 运维中心相关接口
 │   ├── slow_queries.py
 │   ├── execution_plans.py
@@ -48,7 +50,7 @@ backend/app/
 │   ├── export.py
 │   └── scoring.py
 ├── models/
-│   └── database.py         # 包含 OpsActionLog
+│   └── database.py
 ├── services/
 ├── utils/
 ├── database.py
@@ -58,8 +60,8 @@ frontend/src/
 ├── components/
 │   ├── HomePortal.tsx
 │   ├── Dashboard.tsx
-│   ├── AIDiagnosticPage.tsx
-│   ├── OpsCenterPage.tsx   # 运维中心主页面
+│   ├── AIAssistantPage.tsx
+│   ├── OpsCenterPage.tsx
 │   └── ...
 ├── services/
 │   └── api.ts
@@ -75,7 +77,7 @@ frontend/src/
 1. 在 `backend/app/api/` 新增或扩展路由文件（如 `ops.py`）
 2. 在 `backend/app/main.py` 注册路由
 3. 如需持久化，补充 `models/database.py` 模型
-4. 统一返回结构，必要时保留 `data_source`
+4. 统一返回结构，必要时保留 `source` / `fallback` / `latency_ms`
 5. 在 `docs/API.md` 更新接口说明
 
 ## 3.2 前端页面接入流程
@@ -84,7 +86,6 @@ frontend/src/
 2. 在 `components/` 新增页面或扩展现有模块
 3. 在 `App.tsx` 注册菜单与路由
 4. 补充异常处理与空状态
-
 ---
 
 ## 4. 已落地的运维中心能力（供扩展参考）

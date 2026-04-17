@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Button, Card, Col, Descriptions, Drawer, Empty, Input, Row, Select, Space, Switch, Table, Tag, Typography, Statistic, Progress, Checkbox, message } from 'antd';
 import { ApartmentOutlined, BookOutlined, TeamOutlined } from '@ant-design/icons';
 import { opsApi, OpsActionLogItem, OpsInstance, RunbookResult } from '../services/api';
@@ -44,28 +44,24 @@ const OpsCenterPage: React.FC = () => {
     },
   };
 
-  const loadInstances = async () => {
+  const loadInstances = useCallback(async () => {
     const res = await opsApi.instances();
     setInstances(res.data.instances || []);
-  };
+  }, []);
 
-  const loadLogs = async () => {
+  const loadLogs = useCallback(async () => {
     const res = await opsApi.listActionLogs(100, {
       action: actionFilter,
       instance: instanceFilter,
       timeRange,
     });
     setLogs(res.data.items || []);
-  };
+  }, [actionFilter, instanceFilter, timeRange]);
 
   useEffect(() => {
     loadInstances();
     loadLogs();
-  }, []);
-
-  useEffect(() => {
-    loadLogs();
-  }, [actionFilter, instanceFilter, timeRange]);
+  }, [actionFilter, instanceFilter, timeRange, loadLogs, loadInstances]);
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -73,7 +69,7 @@ const OpsCenterPage: React.FC = () => {
       loadLogs();
     }, 10000);
     return () => window.clearInterval(timer);
-  }, [autoRefresh, actionFilter, instanceFilter, timeRange]);
+  }, [autoRefresh, actionFilter, instanceFilter, timeRange, loadLogs]);
 
   const appendLog = async (action: string, result: string, instance?: string) => {
     try {

@@ -18,6 +18,51 @@ export const SlowQueryList: React.FC = () => {
   const [selectedDatabase, setSelectedDatabase] = useState<string | undefined>(undefined);
   const [minExecutionTime, setMinExecutionTime] = useState<number | undefined>(undefined);
 
+  const demoQueries = useMemo<SlowQuery[]>(() => ([
+    {
+      id: 9001,
+      sql_fingerprint: 'SELECT * FROM course_attendance WHERE course_id=?',
+      sql_text: 'SELECT * FROM course_attendance WHERE course_id = 2026 ORDER BY created_at DESC;',
+      execution_time: 2.438,
+      lock_time: 0.012,
+      rows_sent: 120,
+      rows_examined: 15840,
+      database: 'campus_lab',
+      timestamp: new Date().toISOString(),
+      query_time: 2.438,
+      client_ip: '10.10.1.23',
+      user: 'lab_reader',
+    },
+    {
+      id: 9002,
+      sql_fingerprint: 'SELECT * FROM live_stream_logs WHERE event_id=?',
+      sql_text: 'SELECT * FROM live_stream_logs WHERE event_id = 88 AND status = "retry";',
+      execution_time: 1.764,
+      lock_time: 0.007,
+      rows_sent: 45,
+      rows_examined: 9640,
+      database: 'campus_activity',
+      timestamp: new Date().toISOString(),
+      query_time: 1.764,
+      client_ip: '10.10.3.17',
+      user: 'club_service',
+    },
+    {
+      id: 9003,
+      sql_fingerprint: 'SELECT * FROM projector_assets WHERE room_id=?',
+      sql_text: 'SELECT * FROM projector_assets WHERE room_id = 402 AND status = "active";',
+      execution_time: 1.236,
+      lock_time: 0.004,
+      rows_sent: 18,
+      rows_examined: 3320,
+      database: 'campus_teaching',
+      timestamp: new Date().toISOString(),
+      query_time: 1.236,
+      client_ip: '10.10.2.14',
+      user: 'teaching_ops',
+    },
+  ]), []);
+
   const fetchSlowQueries = useCallback(async () => {
     setLoading(true);
     try {
@@ -32,41 +77,12 @@ export const SlowQueryList: React.FC = () => {
       const data = queriesRes.data as SlowQuery[] | { items?: SlowQuery[] };
       const list = Array.isArray(data) ? data : (data && typeof data === 'object' && 'items' in data ? data.items ?? [] : []);
       if (list.length === 0) {
-        setQueries([
-          {
-            id: 9001,
-            sql_fingerprint: 'SELECT * FROM course_attendance WHERE course_id=?',
-            sql_text: 'SELECT * FROM course_attendance WHERE course_id = 2026 ORDER BY created_at DESC;',
-            execution_time: 2.438,
-            lock_time: 0.012,
-            rows_sent: 120,
-            rows_examined: 15840,
-            database: 'campus_lab',
-            timestamp: new Date().toISOString(),
-            query_time: 2.438,
-            client_ip: '10.10.1.23',
-            user: 'lab_reader',
-          },
-          {
-            id: 9002,
-            sql_fingerprint: 'SELECT * FROM live_stream_logs WHERE event_id=?',
-            sql_text: 'SELECT * FROM live_stream_logs WHERE event_id = 88 AND status = "retry";',
-            execution_time: 1.764,
-            lock_time: 0.007,
-            rows_sent: 45,
-            rows_examined: 9640,
-            database: 'campus_activity',
-            timestamp: new Date().toISOString(),
-            query_time: 1.764,
-            client_ip: '10.10.3.17',
-            user: 'club_service',
-          },
-        ]);
+        setQueries(demoQueries);
         setStats({
-          total: 2,
-          avg_execution_time: 2.101,
+          total: demoQueries.length,
+          avg_execution_time: 1.813,
           max_execution_time: 2.438,
-          by_database: { campus_lab: 1, campus_activity: 1 },
+          by_database: { campus_lab: 1, campus_activity: 1, campus_teaching: 1 },
         });
         message.info('暂未采集到慢查询，已展示演示数据');
       } else {
@@ -74,11 +90,18 @@ export const SlowQueryList: React.FC = () => {
         setStats(statsRes.data as SlowQueryStats);
       }
     } catch (error) {
-      message.error('获取慢查询列表失败');
+      setQueries(demoQueries);
+      setStats({
+        total: demoQueries.length,
+        avg_execution_time: 1.813,
+        max_execution_time: 2.438,
+        by_database: { campus_lab: 1, campus_activity: 1, campus_teaching: 1 },
+      });
+      message.warning('后端慢查询接口暂不可用，已切换演示数据');
     } finally {
       setLoading(false);
     }
-  }, [selectedDatabase, minExecutionTime]);
+  }, [selectedDatabase, minExecutionTime, demoQueries]);
 
   useEffect(() => {
     fetchSlowQueries();
@@ -111,6 +134,10 @@ export const SlowQueryList: React.FC = () => {
 
   const handleExport = async () => {
     try {
+      if (filteredQueries.length === 0) {
+        message.warning('当前筛选下没有可导出的慢查询');
+        return;
+      }
       const response = await exportApi.slowQueriesCSV(undefined, 1000);
       const blob = new Blob([response.data], { type: 'text/csv' });
       const url = window.URL.createObjectURL(blob);
@@ -127,7 +154,7 @@ export const SlowQueryList: React.FC = () => {
     }
   };
 
-  const columns = [
+  const columns: Array<{ title: string; dataIndex?: string; key: string; width?: number; render?: (value: unknown, record: SlowQuery) => React.ReactNode; sorter?: (a: SlowQuery, b: SlowQuery) => number }> = [
     {
       title: 'ID',
       dataIndex: 'id',
@@ -138,11 +165,10 @@ export const SlowQueryList: React.FC = () => {
       title: 'SQL 指纹',
       dataIndex: 'sql_fingerprint',
       key: 'sql_fingerprint',
-      ellipsis: { showTitle: false },
       width: 200,
-      render: (text: string) => (
+      render: (text: unknown) => (
         <span 
-          title={text}
+          title={String(text)}
           style={{ 
             fontFamily: 'monospace',
             fontSize: '12px',
@@ -153,7 +179,7 @@ export const SlowQueryList: React.FC = () => {
             maxWidth: '100%'
           }}
         >
-          {text}
+          {String(text)}
         </span>
       ),
     },
@@ -163,25 +189,28 @@ export const SlowQueryList: React.FC = () => {
       key: 'execution_time',
       width: 120,
       sorter: (a: SlowQuery, b: SlowQuery) => a.execution_time - b.execution_time,
-      render: (value: number) => (
-        <Tag 
-          color={value > 5 ? 'red' : value > 2 ? 'orange' : 'green'}
-          style={{ 
-            fontSize: '13px',
-            padding: '2px 8px',
-            fontWeight: value > 5 ? 'bold' : 'normal'
-          }}
-        >
-          {value.toFixed(3)}
-        </Tag>
-      ),
+      render: (value: unknown) => {
+        const numValue = Number(value);
+        return (
+          <Tag 
+            color={numValue > 5 ? 'red' : numValue > 2 ? 'orange' : 'green'}
+            style={{ 
+              fontSize: '13px',
+              padding: '2px 8px',
+              fontWeight: numValue > 5 ? 'bold' : 'normal'
+            }}
+          >
+            {numValue.toFixed(3)}
+          </Tag>
+        );
+      },
     },
     {
       title: '锁时间 (s)',
       dataIndex: 'lock_time',
       key: 'lock_time',
       width: 120,
-      render: (value: number) => (value != null ? Number(value).toFixed(3) : '-'),
+      render: (value: unknown) => (value != null ? Number(value).toFixed(3) : '-'),
     },
     {
       title: '扫描行数',
@@ -206,7 +235,7 @@ export const SlowQueryList: React.FC = () => {
       dataIndex: 'timestamp',
       key: 'timestamp',
       width: 180,
-      render: (value: string) => (value ? new Date(value).toLocaleString('zh-CN') : '-'),
+      render: (value: unknown) => (value ? new Date(String(value)).toLocaleString('zh-CN') : '-'),
     },
     {
       title: '操作',
@@ -234,6 +263,7 @@ export const SlowQueryList: React.FC = () => {
             <ThunderboltOutlined style={{ fontSize: '20px', color: '#1890ff' }} />
             <span style={{ fontSize: '18px', fontWeight: 'bold' }}>慢查询列表</span>
             <Tag color="blue">{filteredQueries.length} 条</Tag>
+            {queries.length === demoQueries.length && <Tag color="gold">演示数据</Tag>}
           </Space>
         }
         extra={
@@ -269,7 +299,7 @@ export const SlowQueryList: React.FC = () => {
               value={selectedDatabase}
               onChange={setSelectedDatabase}
             >
-              {databases.map(db => (
+              {databases.map((db) => (
                 <Option key={db} value={db}>{db}</Option>
               ))}
             </Select>

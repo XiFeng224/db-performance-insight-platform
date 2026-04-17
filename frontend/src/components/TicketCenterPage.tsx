@@ -34,7 +34,7 @@ const TicketCenterPage: React.FC = () => {
   const [keyword, setKeyword] = useState('');
   const [drillOnly, setDrillOnly] = useState(false);
 
-  const load = async () => {
+  const load = React.useCallback(async () => {
     setLoading(true);
     setLoadError('');
     try {
@@ -51,11 +51,11 @@ const TicketCenterPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [statusFilter]);
 
   useEffect(() => {
     load();
-  }, [statusFilter]);
+  }, [statusFilter, load]);
 
   const openDetail = async (record: TicketItem) => {
     setSelected(record);

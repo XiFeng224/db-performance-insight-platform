@@ -77,6 +77,16 @@ async def _append_ai_log(
     await db.commit()
 
 
+def _fallback_answer() -> str:
+    return (
+        "未在本地知识库命中完全答案。建议先执行：\n"
+        "1) 确认影响范围（单机/整排/全实验室）\n"
+        "2) 拍照并记录报错信息\n"
+        "3) 立即创建工单并标注地点/设备\n"
+        "4) 若影响上课，升级为高优先级并通知值班组长"
+    )
+
+
 @router.post("/chat")
 async def assistant_chat(payload: ChatRequest, db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
     started = perf_counter()
@@ -102,6 +112,7 @@ async def assistant_chat(payload: ChatRequest, db: AsyncSession = Depends(get_db
     fallback = True
     success = True
     err_msg = None
+    answer = _fallback_answer()
 
     try:
         if rows:
@@ -128,23 +139,8 @@ async def assistant_chat(payload: ChatRequest, db: AsyncSession = Depends(get_db
                 source = "qwen"
                 engine = "qwen"
                 fallback = False
-            else:
-                answer = (
-                    "未在本地知识库命中完全答案。建议先执行：\n"
-                    "1) 确认影响范围（单机/整排/全实验室）\n"
-                    "2) 拍照并记录报错信息\n"
-                    "3) 立即创建工单并标注地点/设备\n"
-                    "4) 若影响上课，升级为高优先级并通知值班组长"
-                )
-                source = "fallback_guide"
     except Exception as e:
-        answer = (
-            "未在本地知识库命中完全答案。建议先执行：\n"
-            "1) 确认影响范围（单机/整排/全实验室）\n"
-            "2) 拍照并记录报错信息\n"
-            "3) 立即创建工单并标注地点/设备\n"
-            "4) 若影响上课，升级为高优先级并通知值班组长"
-        )
+        answer = _fallback_answer()
         source = "fallback_guide"
         engine = "rule"
         fallback = True
@@ -203,6 +199,7 @@ async def assistant_intake(payload: IntakeRequest, db: AsyncSession = Depends(ge
             "接单后5分钟内填写ETA",
         ],
         "engine": "rule",
+        "source": "rule",
         "mode": mode,
         "fallback": False,
     }
@@ -223,14 +220,17 @@ async def assistant_intake(payload: IntakeRequest, db: AsyncSession = Depends(ge
                         "location": enhanced.get("location") or result["location"],
                         "recommendation": enhanced.get("recommendation") or result["recommendation"],
                         "engine": "qwen",
+                        "source": "qwen",
                         "fallback": False,
                     }
                 )
             else:
                 result["engine"] = "rule"
+                result["source"] = "rule"
                 result["fallback"] = True
         except Exception as e:
             result["engine"] = "rule"
+            result["source"] = "rule"
             result["fallback"] = True
             success = False
             err_msg = str(e)
@@ -240,7 +240,7 @@ async def assistant_intake(payload: IntakeRequest, db: AsyncSession = Depends(ge
         db,
         scene="intake",
         engine=result["engine"],
-        source=result["engine"],
+        source=result["source"],
         fallback=result["fallback"],
         latency_ms=latency_ms,
         success=success,
@@ -252,30 +252,45 @@ async def assistant_intake(payload: IntakeRequest, db: AsyncSession = Depends(ge
 
 @router.get("/stats")
 async def assistant_stats(db: AsyncSession = Depends(get_db)) -> Dict[str, Any]:
-    rows = (await db.execute(select(AICallLog))).scalars().all()
-    if not rows:
+    try:
+        rows = (await db.execute(select(AICallLog))).scalars().all()
+        if not rows:
+            return {
+                "count": 0,
+                "avg_latency_ms": 0,
+                "fallback_rate": 0,
+                "engine_distribution": {},
+                "scene_distribution": {},
+            }
+
+        count = len(rows)
+        avg_latency = round(sum(r.latency_ms for r in rows) / count, 2)
+        fallback_rate = round(sum(1 for r in rows if r.fallback) / count, 4)
+
+        engine_rows = (await db.execute(select(AICallLog.engine, func.count(AICallLog.id)).group_by(AICallLog.engine))).all()
+        scene_rows = (await db.execute(select(AICallLog.scene, func.count(AICallLog.id)).group_by(AICallLog.scene))).all()
+
+        return {
+            "count": count,
+            "avg_latency_ms": avg_latency,
+            "fallback_rate": fallback_rate,
+            "engine_distribution": {k: v for k, v in engine_rows},
+            "scene_distribution": {k: v for k, v in scene_rows},
+        }
+    except Exception as exc:
         return {
             "count": 0,
             "avg_latency_ms": 0,
             "fallback_rate": 0,
             "engine_distribution": {},
             "scene_distribution": {},
+            "error": str(exc),
         }
 
-    count = len(rows)
-    avg_latency = round(sum(r.latency_ms for r in rows) / count, 2)
-    fallback_rate = round(sum(1 for r in rows if r.fallback) / count, 4)
 
-    engine_rows = (await db.execute(select(AICallLog.engine, func.count(AICallLog.id)).group_by(AICallLog.engine))).all()
-    scene_rows = (await db.execute(select(AICallLog.scene, func.count(AICallLog.id)).group_by(AICallLog.scene))).all()
-
-    return {
-        "count": count,
-        "avg_latency_ms": avg_latency,
-        "fallback_rate": fallback_rate,
-        "engine_distribution": {k: v for k, v in engine_rows},
-        "scene_distribution": {k: v for k, v in scene_rows},
-    }
+@router.get("/qwen-test")
+async def qwen_test() -> Dict[str, Any]:
+    return await QwenService.test_connection()
 
 
 @router.post("/handover-summary")

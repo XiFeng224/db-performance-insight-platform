@@ -155,33 +155,35 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ compact = false }) => 
 
   const handleResolve = async (alertId: number) => {
     try {
+      const isDemo = alerts.some((a) => a.id >= 9000);
+      if (isDemo) {
+        setAlerts((prev) => prev.filter((a) => a.id !== alertId));
+        message.success('演示事件已接单并进入处置闭环');
+        return;
+      }
       await alertsApi.resolve(alertId);
       message.success('事件已接单并进入处置闭环');
       fetchAlerts();
     } catch {
-      message.error('操作失败');
+      message.error('操作失败：告警可能已被处理或不存在');
     }
   };
 
   const handleDismiss = async (alertId: number) => {
     try {
+      const isDemo = alerts.some((a) => a.id >= 9000);
+      if (isDemo) {
+        setAlerts((prev) => prev.filter((a) => a.id !== alertId));
+        message.success('演示事件已转派/忽略');
+        return;
+      }
       await alertsApi.dismiss(alertId);
       message.success('事件已转派/忽略');
       fetchAlerts();
     } catch {
-      message.error('操作失败');
+      message.error('操作失败：告警可能已被处理或不存在');
     }
   };
-
-  if (compact) {
-    const criticalCount = alerts.filter((a) => a.severity === 'critical').length;
-    const warningCount = alerts.filter((a) => a.severity === 'warning').length;
-    return (
-      <Badge count={criticalCount + warningCount} size="small">
-        <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
-      </Badge>
-    );
-  }
 
   const criticalCount = alerts.filter((a) => a.severity === 'critical').length;
   const warningCount = alerts.filter((a) => a.severity === 'warning').length;
@@ -191,6 +193,14 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ compact = false }) => 
     () => alerts.filter((a) => severityFilter === 'all' || a.severity === severityFilter),
     [alerts, severityFilter]
   );
+
+  if (compact) {
+    return (
+      <Badge count={criticalCount + warningCount} size="small">
+        <BellOutlined style={{ fontSize: 18, cursor: 'pointer' }} />
+      </Badge>
+    );
+  }
 
   return (
     <div className="fade-in">
@@ -212,8 +222,8 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ compact = false }) => 
         <Col xs={24} lg={16}>
           <Card
             loading={loading}
-            extra={<Button onClick={fetchAlerts}>刷新</Button>}
-            title={<Space><BellOutlined /><span>校园事件队列</span><Badge count={alerts.length} showZero /></Space>}
+            extra={<Space><Button onClick={fetchAlerts}>刷新</Button><Tag color="blue">演示/真实自动切换</Tag></Space>}
+            title={<Space><BellOutlined /><span>校园事件队列</span><Badge count={filteredAlerts.length} showZero /></Space>}
           >
             {criticalCount > 0 && (
               <AntAlert
@@ -341,7 +351,7 @@ export const AlertCenter: React.FC<AlertCenterProps> = ({ compact = false }) => 
                       border: '1px solid #e5e7eb',
                       background: '#fbfdff',
                     }}
-                    bodyStyle={{ padding: '10px 12px' }}
+                    styles={{ body: { padding: '10px 12px' } }}
                   >
                     <Space direction="vertical" size={4} style={{ width: '100%' }}>
                       <Space wrap>

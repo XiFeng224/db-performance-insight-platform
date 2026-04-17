@@ -700,6 +700,7 @@ export const assistantApi = {
   chat: (message: string) => api.post('/assistant/chat', { message }),
   intake: (text: string, mode: 'auto' | 'rule' | 'llm' = 'auto') => api.post('/assistant/intake', { text, mode }),
   stats: () => api.get<AssistantStatsResult>('/assistant/stats'),
+  qwenTest: () => api.get('/assistant/qwen-test'),
   handoverSummary: (payload: { shift_name?: string; unresolved_tickets?: string[]; incidents?: string[] }) =>
     api.post('/assistant/handover-summary', payload),
 };

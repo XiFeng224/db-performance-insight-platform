@@ -43,11 +43,12 @@ class Settings(BaseSettings):
     llm_enabled: bool = False
     qwen_api_key: Optional[str] = None
     qwen_base_url: str = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
-    qwen_model: str = "qwen-turbo"
-    qwen_timeout_seconds: int = 6
+    qwen_model: str = "qwen-plus"
+    qwen_timeout_seconds: int = 20
     
     class Config:
         env_file = ".env"
+        env_file_encoding = "utf-8"
 
 
 settings = Settings()

@@ -55,6 +55,35 @@ async def _append_event(db: AsyncSession, ticket_id: int, event_type: str, conte
     db.add(event)
 
 
+def _normalize_status(status: str) -> str:
+    value = (status or "").strip().lower()
+    aliases = {
+        "pending": "pending",
+        "assigned": "assigned",
+        "in_progress": "in_progress",
+        "processing": "in_progress",
+        "waiting_acceptance": "waiting_acceptance",
+        "verifying": "waiting_acceptance",
+        "closed": "closed",
+        "done": "closed",
+    }
+    if value not in aliases:
+        raise HTTPException(status_code=400, detail="不支持的工单状态")
+    return aliases[value]
+
+
+def _validate_transition(current: str, target: str) -> None:
+    allowed = {
+        "pending": {"assigned", "in_progress"},
+        "assigned": {"in_progress", "waiting_acceptance", "closed"},
+        "in_progress": {"waiting_acceptance", "closed"},
+        "waiting_acceptance": {"closed", "in_progress"},
+        "closed": set(),
+    }
+    if target not in allowed.get(current, set()):
+        raise HTTPException(status_code=400, detail=f"工单状态不允许从 {current} 变更为 {target}")
+
+
 def _calc_risk_score(payload: TicketCreate) -> Dict[str, Any]:
     text = f"{payload.title} {payload.description} {payload.location or ''}".lower()
     score = 0
@@ -155,9 +184,12 @@ async def update_ticket_status(ticket_id: int, payload: TicketStatusUpdate, db: 
     if not ticket:
         raise HTTPException(status_code=404, detail="工单不存在")
 
-    ticket.status = payload.status
+    next_status = _normalize_status(payload.status)
+    _validate_transition(ticket.status, next_status)
+
+    ticket.status = next_status
     ticket.updated_at = datetime.utcnow()
-    if payload.status == "closed":
+    if next_status == "closed":
         ticket.closed_at = datetime.utcnow()
         ticket.adopted_optimization_suggestion_id = payload.adopted_optimization_suggestion_id
         ticket.adopted_optimization_note = payload.adopted_optimization_note
@@ -174,7 +206,7 @@ async def update_ticket_status(ticket_id: int, payload: TicketStatusUpdate, db: 
                 suggestion.applied = True
                 suggestion.applied_at = datetime.utcnow()
 
-    await _append_event(db, ticket.id, "status_changed", f"状态更新为 {payload.status}")
+    await _append_event(db, ticket.id, "status_changed", f"状态更新为 {next_status}")
     await db.commit()
     await db.refresh(ticket)
     return {"ticket": ticket.to_dict()}
@@ -203,6 +235,9 @@ async def assign_ticket(ticket_id: int, payload: TicketAssignRequest, db: AsyncS
     ticket = result.scalar_one_or_none()
     if not ticket:
         raise HTTPException(status_code=404, detail="工单不存在")
+
+    if ticket.status == "closed":
+        raise HTTPException(status_code=400, detail="已关闭工单不能重新派单")
 
     assignee_id = payload.assignee_id
 

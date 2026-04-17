@@ -7,22 +7,46 @@ import { getCampusSceneHint, getCampusTicketSeverityMeta } from '../utils/campus
 const { TextArea } = Input;
 const { Title, Text, Paragraph } = Typography;
 
+type ChatReference = {
+  id?: string | number;
+  title?: string;
+};
+
+type TicketDraft = {
+  title?: string;
+  description?: string;
+  category?: string;
+  severity?: 'high' | 'medium' | 'low' | string;
+  location?: string;
+  recommendation?: string[];
+  engine?: string;
+  fallback?: boolean;
+};
+
+type HandoverFormValues = {
+  shift_name?: string;
+  unresolved?: string;
+  incidents?: string;
+};
+
 const AIAssistantPage: React.FC = () => {
   const [chatInput, setChatInput] = useState('');
   const [chatAnswer, setChatAnswer] = useState('');
   const [chatSource, setChatSource] = useState('');
-  const [chatRefs, setChatRefs] = useState<any[]>([]);
+  const [chatRefs, setChatRefs] = useState<ChatReference[]>([]);
   const [loadingChat, setLoadingChat] = useState(false);
 
   const [intakeText, setIntakeText] = useState('');
   const [intakeMode, setIntakeMode] = useState<'auto' | 'rule' | 'llm'>('auto');
-  const [draft, setDraft] = useState<any>(null);
-  const [ruleDraft, setRuleDraft] = useState<any>(null);
+  const [draft, setDraft] = useState<TicketDraft | null>(null);
+  const [ruleDraft, setRuleDraft] = useState<TicketDraft | null>(null);
   const [loadingIntake, setLoadingIntake] = useState(false);
 
   const [handover, setHandover] = useState('');
   const [loadingHandover, setLoadingHandover] = useState(false);
   const [stats, setStats] = useState<{ count: number; avg_latency_ms: number; fallback_rate: number } | null>(null);
+  const [qwenStatus, setQwenStatus] = useState<{ enabled: boolean; reachable: boolean; model: string; message: string } | null>(null);
+  const [loadingQwen, setLoadingQwen] = useState(false);
 
   const sceneHint = useMemo(() => {
     const text = `${chatInput} ${intakeText}`;
@@ -38,9 +62,23 @@ const AIAssistantPage: React.FC = () => {
     }
   };
 
+  const checkQwen = async () => {
+    setLoadingQwen(true);
+    try {
+      const res = await assistantApi.qwenTest();
+      setQwenStatus(res.data);
+    } catch {
+      setQwenStatus({ enabled: false, reachable: false, model: 'unknown', message: '千问连通性测试失败' });
+    } finally {
+      setLoadingQwen(false);
+    }
+  };
+
   useEffect(() => {
     loadStats();
   }, []);
+
+  const formatAdvice = (items: string[]) => items.map((item) => item.replace(/^[-•\d)\s]+/, '').trim()).filter(Boolean);
 
   const handleChat = async () => {
     if (!chatInput.trim()) return;
@@ -75,11 +113,11 @@ const AIAssistantPage: React.FC = () => {
   const submitDraftTicket = async () => {
     if (!draft) return;
     await ticketsApi.create({
-      title: draft.title,
-      description: draft.description,
-      category: draft.category,
-      severity: draft.severity,
-      location: draft.location,
+      title: draft.title || '未命名工单',
+      description: draft.description || '',
+      category: draft.category || 'other',
+      severity: draft.severity || 'low',
+      location: draft.location || '',
     });
     message.success('已根据AI受理结果创建工单');
   };
@@ -101,7 +139,7 @@ const AIAssistantPage: React.FC = () => {
     }
   };
 
-  const handleHandover = async (values: any) => {
+  const handleHandover = async (values: HandoverFormValues) => {
     setLoadingHandover(true);
     try {
       const unresolved = (values.unresolved || '').split('\n').map((s: string) => s.trim()).filter(Boolean);
@@ -132,12 +170,21 @@ const AIAssistantPage: React.FC = () => {
           <Tag color="red">建议分级：{sceneHint.level}</Tag>
           <Tag color="blue">升级：{sceneHint.escalate}</Tag>
           <Button size="small" icon={<NotificationOutlined />} onClick={copyNotifyTemplate}>复制通报模板</Button>
+          <Button size="small" onClick={checkQwen} loading={loadingQwen}>测试千问连通性</Button>
         </Space>
         {stats && (
           <Space wrap style={{ marginTop: 10 }}>
             <Tag color="green">AI调用数：{stats.count}</Tag>
             <Tag color="processing">平均延迟：{stats.avg_latency_ms}ms</Tag>
             <Tag color={stats.fallback_rate > 0.3 ? 'orange' : 'blue'}>回退率：{(stats.fallback_rate * 100).toFixed(1)}%</Tag>
+          </Space>
+        )}
+        {qwenStatus && (
+          <Space wrap style={{ marginTop: 10 }}>
+            <Tag color={qwenStatus.enabled ? 'green' : 'default'}>LLM：{qwenStatus.enabled ? '已启用' : '未启用'}</Tag>
+            <Tag color={qwenStatus.reachable ? 'green' : 'red'}>连通性：{qwenStatus.reachable ? '正常' : '异常'}</Tag>
+            <Tag color="blue">模型：{qwenStatus.model}</Tag>
+            <Text type="secondary">{qwenStatus.message}</Text>
           </Space>
         )}
       </Card>
@@ -177,6 +224,7 @@ const AIAssistantPage: React.FC = () => {
                                chatSource === 'qwen' ? '千问回答' :
                                chatSource === 'knowledge_base' ? '知识库直答' : '规则兜底'}
                             </Tag>
+                            {chatSource === 'rule' && <Tag color="orange">AI失败已回退</Tag>}
                           </Space>
                           <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{chatAnswer}</pre>
                           {chatRefs.length > 0 && (
@@ -244,9 +292,11 @@ const AIAssistantPage: React.FC = () => {
                             {draft.fallback && <Tag color="orange">AI失败已回退</Tag>}
                           </p>
                           <p><b>处置建议：</b></p>
-                          <ul>
-                            {(draft.recommendation || []).map((x: string, idx: number) => <li key={idx}>{x}</li>)}
-                          </ul>
+                          <div style={{ paddingLeft: 2, lineHeight: 1.75 }}>
+                            {(formatAdvice(draft.recommendation || [])).map((x: string, idx: number) => (
+                              <div key={idx} style={{ marginBottom: 4 }}>{x}</div>
+                            ))}
+                          </div>
 
                           {ruleDraft && (
                             <Card size="small" style={{ marginBottom: 8 }} title="规则 vs 当前模式 对比">

@@ -25,12 +25,20 @@ const KnowledgeCenterPage: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [items, setItems] = useState<KnowledgeItem[]>([]);
   const [query, setQuery] = useState('');
+  const demoItems = useMemo(() => (items.length > 0 ? items : [
+    { id: 9001, title: '课堂投影黑屏应急SOP', keywords: '投影,黑屏,课堂', category: 'teaching', content: '先检查输入源与HDMI连接；切换备用线缆；5分钟内无法恢复则升级值班老师。', view_count: 28, solve_count: 22, solve_rate: 0.79 },
+    { id: 9002, title: '机房整排无法联网排障', keywords: '机房,网络,交换机', category: 'lab', content: '先确认受影响范围；检查端口与网关连通；必要时切换备用网络。', view_count: 34, solve_count: 27, solve_rate: 0.82 },
+    { id: 9003, title: '社团直播推流中断处置', keywords: '社团,直播,推流', category: 'club', content: '优先恢复主推流链路；并行启动备推流；通知活动负责人和中心值班老师。', view_count: 18, solve_count: 13, solve_rate: 0.72 },
+  ] as KnowledgeItem[]), [items]);
 
   const load = async (q?: string) => {
     setLoading(true);
     try {
       const res = await knowledgeApi.list({ q, limit: 100 });
       setItems(res.data.items || []);
+      if ((res.data.items || []).length === 0) {
+        message.info('暂无真实知识库数据，已启用演示示例');
+      }
     } finally {
       setLoading(false);
     }
@@ -40,7 +48,14 @@ const KnowledgeCenterPage: React.FC = () => {
     load();
   }, []);
 
-  const create = async (values: any) => {
+  type KnowledgeFormValues = {
+    title: string;
+    keywords?: string;
+    category: string;
+    content: string;
+  };
+
+  const create = async (values: KnowledgeFormValues) => {
     try {
       await knowledgeApi.create(values);
       message.success('校园SOP条目已创建');
@@ -63,9 +78,6 @@ const KnowledgeCenterPage: React.FC = () => {
     return { totalViews, totalSolve, avgSolveRate, byCategory };
   }, [items]);
 
-  const hotItems = useMemo(() => {
-    return [...items].sort((a, b) => (b.view_count + b.solve_count) - (a.view_count + a.solve_count)).slice(0, 5);
-  }, [items]);
 
   return (
     <div className="fade-in">
@@ -160,16 +172,19 @@ const KnowledgeCenterPage: React.FC = () => {
         <Col xs={24} lg={8}>
           <Card title="高频SOP热榜" style={{ marginBottom: 16 }}>
             <Space direction="vertical" style={{ width: '100%' }}>
-              {hotItems.map((item, idx) => (
-                <Card key={item.id} size="small" title={`TOP ${idx + 1} · ${item.title}`}>
-                  <Space wrap>
-                    <Tag color="blue">浏览 {item.view_count}</Tag>
-                    <Tag color="green">解决 {item.solve_count}</Tag>
-                    <Tag color="purple">解决率 {(item.solve_rate * 100).toFixed(1)}%</Tag>
-                  </Space>
-                </Card>
-              ))}
-              {hotItems.length === 0 && <Text type="secondary">暂无数据</Text>}
+              {demoItems
+                .sort((a, b) => (b.view_count + b.solve_count) - (a.view_count + a.solve_count))
+                .slice(0, 5)
+                .map((item, idx) => (
+                  <Card key={item.id} size="small" title={`TOP ${idx + 1} · ${item.title}`}>
+                    <Space wrap>
+                      <Tag color="blue">浏览 {item.view_count}</Tag>
+                      <Tag color="green">解决 {item.solve_count}</Tag>
+                      <Tag color="purple">解决率 {(item.solve_rate * 100).toFixed(1)}%</Tag>
+                    </Space>
+                  </Card>
+                ))}
+              {demoItems.length === 0 && <Text type="secondary">暂无数据</Text>}
             </Space>
           </Card>
 

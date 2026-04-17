@@ -179,26 +179,39 @@ export const Dashboard: React.FC = () => {
       </Row>
 
       <Row gutter={[16, 16]} style={{ marginTop: '16px' }}>
-        <Col xs={24} lg={12}>
+        <Col xs={24} lg={15}>
           <AlertCenter compact={false} />
         </Col>
-        <Col xs={24} lg={12}>
-          <Card title="InnoDB 状态（机房核心库）" loading={loading}>
-            <Row gutter={[16, 16]}>
-              <Col xs={12} sm={6}>
-                <Statistic title="Buffer Pool 读取" value={metrics?.innodb?.buffer_pool_reads || 0} suffix="次" valueStyle={{ fontSize: '18px' }} />
-              </Col>
-              <Col xs={12} sm={6}>
-                <Statistic title="Buffer Pool 请求" value={metrics?.innodb?.buffer_pool_read_requests || 0} suffix="次" valueStyle={{ fontSize: '18px' }} />
-              </Col>
-              <Col xs={12} sm={6}>
-                <Statistic title="读取行数" value={metrics?.innodb?.rows_read || 0} suffix="行" valueStyle={{ fontSize: '18px' }} />
-              </Col>
-              <Col xs={12} sm={6}>
-                <Statistic title="插入行数" value={metrics?.innodb?.rows_inserted || 0} suffix="行" valueStyle={{ fontSize: '18px' }} />
-              </Col>
-            </Row>
-          </Card>
+        <Col xs={24} lg={9}>
+          <Space direction="vertical" size={16} style={{ width: '100%' }}>
+            <Card title="值班接班人" loading={loading}>
+              <Space direction="vertical" size={12} style={{ width: '100%' }}>
+                <Alert type="info" showIcon message="当前值班接班建议" description="根据校园事件队列与在线状态，建议优先由值班老师接管严重事件，学生助理负责现场记录与初步处置。" />
+                <Card size="small">
+                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                    <Tag color="green">当前接班人：陈老师</Tag>
+                    <Text>责任范围：校园实验室 / 机房 / 社团活动</Text>
+                    <Text type="secondary">接班时间：15:50</Text>
+                  </Space>
+                </Card>
+                <Card size="small">
+                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                    <Tag color="orange">下一班接班人：李同学</Tag>
+                    <Text>预计接班时间：16:00</Text>
+                    <Text type="secondary">交接事项：告警队列、未闭环工单、演练状态</Text>
+                  </Space>
+                </Card>
+                <Card size="small">
+                  <Space direction="vertical" size={4} style={{ width: '100%' }}>
+                    <Tag color="blue">备班接班人：王同学</Tag>
+                    <Text>状态：待命</Text>
+                    <Text type="secondary">负责：社团活动与夜间值守</Text>
+                  </Space>
+                </Card>
+                <Statistic title="当前接班队列" value={3} />
+              </Space>
+            </Card>
+          </Space>
         </Col>
       </Row>
 

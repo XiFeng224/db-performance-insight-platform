@@ -94,6 +94,7 @@ const App: React.FC = () => {
         });
       } catch {
         setTopSummary({ total: 0, p1: 0, pending: 0, optVerifying: 0 });
+        message.warning('统计数据暂不可用，已切换为默认展示');
       }
     };
     loadTopSummary();
@@ -237,7 +238,7 @@ const App: React.FC = () => {
                   onChange={(checked) => {
                     setDemoMode(checked);
                     localStorage.setItem('campus_demo_mode', checked ? '1' : '0');
-                    window.location.reload();
+                    message.success(checked ? '已切换到演示模式' : '已切换到值班在线模式');
                   }}
                 />
               </Space>

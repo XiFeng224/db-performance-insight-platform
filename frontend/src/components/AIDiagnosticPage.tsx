@@ -74,54 +74,54 @@ const AIDiagnosticPage: React.FC = () => {
     load();
   }, []);
 
-  const openTickets = useMemo(() => tickets.filter((t) => t.status !== 'closed'), [tickets]);
+  const openTickets = useMemo(() => tickets.filter((t: TicketItem) => t.status !== 'closed'), [tickets]);
 
   const priorityRows = useMemo<PriorityRow[]>(() => {
     const now = dayjs();
     return openTickets
-      .map((t) => {
+      .map((t: TicketItem) => {
         const waitMinutes = Math.max(0, now.diff(dayjs(t.created_at), 'minute'));
         const overdueMinutes = t.due_at ? Math.max(0, now.diff(dayjs(t.due_at), 'minute')) : 0;
         const score = (severityWeight[t.severity] || 25) + Math.min(25, Math.floor(waitMinutes / 10)) + Math.min(30, Math.floor(overdueMinutes / 5));
-        const rule = rootCauseRules.find((r) => t.title.includes(r.keyword) || t.description.includes(r.keyword)) || rootCauseRules[2];
+        const rule = rootCauseRules.find((r: { keyword: string; cause: string; action: string }) => t.title.includes(r.keyword) || t.description.includes(r.keyword)) || rootCauseRules[2];
         return { key: t.id, ticket: t, waitMinutes, overdueMinutes, priorityScore: score, suggestion: rule.action };
       })
-      .sort((a, b) => b.priorityScore - a.priorityScore)
+      .sort((a: PriorityRow, b: PriorityRow) => b.priorityScore - a.priorityScore)
       .slice(0, 20);
   }, [openTickets]);
 
   const rootCauseStats = useMemo(() => {
     const counter: Record<string, number> = {};
-    openTickets.forEach((t) => {
+    openTickets.forEach((t: TicketItem) => {
       const text = `${t.title} ${t.description}`;
-      const hit = rootCauseRules.find((r) => text.includes(r.keyword));
+      const hit = rootCauseRules.find((r: { keyword: string; cause: string; action: string }) => text.includes(r.keyword));
       const cause = hit?.cause || '通用设备/服务异常';
       counter[cause] = (counter[cause] || 0) + 1;
     });
-    return Object.entries(counter).map(([cause, count]) => ({ cause, count })).sort((a, b) => b.count - a.count);
+    return Object.entries(counter).map(([cause, count]: [string, number]) => ({ cause, count })).sort((a: { cause: string; count: number }, b: { cause: string; count: number }) => b.count - a.count);
   }, [openTickets]);
 
   const knowledgeSuggest = useMemo(() => {
     const topKeywords = rootCauseRules
-      .map((r) => ({ keyword: r.keyword, count: openTickets.filter((t) => `${t.title} ${t.description}`.includes(r.keyword)).length }))
-      .filter((x) => x.count > 0)
-      .sort((a, b) => b.count - a.count)
+      .map((r: { keyword: string; cause: string; action: string }) => ({ keyword: r.keyword, count: openTickets.filter((t: TicketItem) => `${t.title} ${t.description}`.includes(r.keyword)).length }))
+      .filter((x: { keyword: string; count: number }) => x.count > 0)
+      .sort((a: { keyword: string; count: number }, b: { keyword: string; count: number }) => b.count - a.count)
       .slice(0, 3)
-      .map((x) => x.keyword);
+      .map((x: { keyword: string; count: number }) => x.keyword);
 
-    return knowledge.filter((k) => topKeywords.some((kw) => k.title.includes(kw) || (k.keywords || '').includes(kw))).slice(0, 6);
+    return knowledge.filter((k: KnowledgeItem) => topKeywords.some((kw: string) => k.title.includes(kw) || (k.keywords || '').includes(kw))).slice(0, 6);
   }, [knowledge, openTickets]);
 
   const p1Risk = useMemo(() => {
-    const highOpen = openTickets.filter((t) => t.severity === 'high').length;
-    const overdue = priorityRows.filter((r) => r.overdueMinutes > 0).length;
+    const highOpen = openTickets.filter((t: TicketItem) => t.severity === 'high').length;
+    const overdue = priorityRows.filter((r: PriorityRow) => r.overdueMinutes > 0).length;
     return Math.min(100, highOpen * 18 + overdue * 12);
   }, [openTickets, priorityRows]);
 
   const campusImpact = useMemo(() => {
-    const teaching = openTickets.filter((t) => t.category === 'teaching_support').length;
-    const lab = openTickets.filter((t) => t.category === 'lab_support').length;
-    const club = openTickets.filter((t) => t.category === 'club_support').length;
+    const teaching = openTickets.filter((t: TicketItem) => t.category === 'teaching_support').length;
+    const lab = openTickets.filter((t: TicketItem) => t.category === 'lab_support').length;
+    const club = openTickets.filter((t: TicketItem) => t.category === 'club_support').length;
     return {
       teaching,
       lab,
