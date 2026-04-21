@@ -32,7 +32,7 @@ async def list_instances() -> Dict[str, Any]:
                 "instance_id": "local-mysql-1",
                 "name": "MySQL-Primary",
                 "engine": "MySQL",
-                "version": status.get("version", "8.0"),
+                "version": status.get("version", "8.0") or "8.0",
                 "status": "online",
                 "connections": _safe_int(status.get("Threads_connected", 0)),
                 "qps_estimate": round(
