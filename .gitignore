@@ -44,4 +44,7 @@ coverage/
 
 # Large files
 *.zip
-*.tar.gz
+*.tar.gz# ĞéÄâ»·¾³
+.venv/
+venv/
+env/

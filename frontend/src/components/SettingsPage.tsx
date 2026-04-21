@@ -40,7 +40,8 @@ export const SettingsPage: React.FC = () => {
         examWeekMode: false,
         eventPeakMode: true,
       });
-    } catch {
+    } catch (error) {
+      console.error('获取配置失败:', error);
       message.error('获取配置失败');
     } finally {
       setFetching(false);

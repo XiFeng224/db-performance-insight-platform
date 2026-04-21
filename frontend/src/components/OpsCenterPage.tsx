@@ -46,7 +46,13 @@ const OpsCenterPage: React.FC = () => {
 
   const loadInstances = useCallback(async () => {
     const res = await opsApi.instances();
-    setInstances(res.data.instances || []);
+    const instancesData = res.data.instances || [];
+    // 过滤掉 undefined 元素，并确保每个元素都有 version 属性
+    const filteredInstances = instancesData.filter(Boolean).map(instance => ({
+      ...instance,
+      version: instance.version || '未知版本'
+    }));
+    setInstances(filteredInstances);
   }, []);
 
   const loadLogs = useCallback(async () => {
