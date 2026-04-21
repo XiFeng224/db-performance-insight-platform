@@ -376,7 +376,7 @@ export const OptimizationPage: React.FC = () => {
                 ]}
               >
                 <Card
-                  variant="outlined"
+                  bordered
                   style={{ border: s.priority === 'high' ? '2px solid #ff4d4f' : undefined }}
                   extra={
                     <Space direction="vertical" size={4} style={{ alignItems: 'flex-end' }}>

@@ -11,11 +11,11 @@ const TicketSubmitPage: React.FC = () => {
   const navigate = useNavigate();
   const [form] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
+  const [title, setTitle] = useState('');
   const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItem[]>([]);
   const [impactScope, setImpactScope] = useState<'single' | 'room' | 'multi'>('single');
   const [urgencyLevel, setUrgencyLevel] = useState<'normal' | 'urgent' | 'sos'>('normal');
   const [drillMode, setDrillMode] = useState(false);
-  const [matchedTips, setMatchedTips] = useState<KnowledgeItem[]>([]);
 
   useEffect(() => {
     const loadKnowledge = async () => {
@@ -29,25 +29,16 @@ const TicketSubmitPage: React.FC = () => {
     loadKnowledge();
   }, []);
 
-  useEffect(() => {
-    try {
-      const title = form.getFieldValue('title') || '';
-      if (!title.trim()) {
-        setMatchedTips([]);
-        return;
-      }
-      const kw = title.toLowerCase();
-      const tips = knowledgeItems
-        .filter((k) => {
-          const text = `${k.title} ${k.keywords || ''} ${k.content}`.toLowerCase();
-          return text.includes(kw) || kw.includes(k.title.toLowerCase());
-        })
-        .slice(0, 5);
-      setMatchedTips(tips);
-    } catch (error) {
-      setMatchedTips([]);
-    }
-  }, [form, knowledgeItems]);
+  const matchedTips = useMemo(() => {
+    if (!title.trim()) return [];
+    const kw = title.toLowerCase();
+    return knowledgeItems
+      .filter((k) => {
+        const text = `${k.title} ${k.keywords || ''} ${k.content}`.toLowerCase();
+        return text.includes(kw) || kw.includes(k.title.toLowerCase());
+      })
+      .slice(0, 5);
+  }, [title, knowledgeItems]);
 
   const urgencyTag = useMemo(() => {
     if (urgencyLevel === 'sos') return <Tag color="red">重大故障/SOS</Tag>;
@@ -82,6 +73,7 @@ const TicketSubmitPage: React.FC = () => {
       });
       message.success(`工单提交成功 #${res.data.ticket.id}`);
       form.resetFields();
+      setTitle('');
       setImpactScope('single');
       setUrgencyLevel('normal');
     } catch {
@@ -116,6 +108,8 @@ const TicketSubmitPage: React.FC = () => {
               <Form.Item label="问题标题" name="title" rules={[{ required: true, message: '请输入标题' }]}>
                 <Input
                   placeholder="例如：3教402上课投影黑屏"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
                 />
               </Form.Item>
 

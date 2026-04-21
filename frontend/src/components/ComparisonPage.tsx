@@ -27,7 +27,7 @@ import {
   ApartmentOutlined,
   TeamOutlined,
 } from '@ant-design/icons';
-import { apiService } from '../services/api';
+import axios from 'axios';
 import dayjs from 'dayjs';
 
 const { RangePicker } = DatePicker;
@@ -106,11 +106,13 @@ const ComparisonPage: React.FC = () => {
   const handleCompare = useCallback(async () => {
     setLoading(true);
     try {
-      const response = await apiService.getMetrics({
-        period1_start: period1[0].toISOString(),
-        period1_end: period1[1].toISOString(),
-        period2_start: period2[0].toISOString(),
-        period2_end: period2[1].toISOString()
+      const response = await axios.get<ComparisonData>('/api/comparison/metrics', {
+        params: {
+          period1_start: period1[0].toISOString(),
+          period1_end: period1[1].toISOString(),
+          period2_start: period2[0].toISOString(),
+          period2_end: period2[1].toISOString(),
+        },
       });
       setComparison(response.data);
       setSimilarCases([

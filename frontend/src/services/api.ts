@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse } from 'axios';
 import { message } from 'antd';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: '/api',
   timeout: 30000,
 });
 
@@ -712,10 +712,6 @@ export const aiApi = {
   diagnose: (metricsData: any[]) => api.post<AIDiagnosticResult>('/ai/diagnose', metricsData),
 };
 
-export const comparisonApi = {
-  getMetrics: (params: any) => api.get('/comparison/metrics', { params }),
-};
-
 export const apiService = {
   ...slowQueryApi,
   ...executionPlanApi,
@@ -726,7 +722,6 @@ export const apiService = {
   ...exportApi,
   ...configApi,
   ...aiApi,
-  ...comparisonApi,
 };
 
 export default api;

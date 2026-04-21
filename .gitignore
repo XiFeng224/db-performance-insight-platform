@@ -2,6 +2,7 @@
 node_modules/
 venv/
 env/
+.venv/
 
 # Logs
 logs
@@ -42,13 +43,15 @@ coverage/
 *.tmp
 *.temp
 
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.db
+*.sqlite
+
 # Large files
 *.zip
-*.tar.gz# 虚拟环境
-.venv/
-venv/
-env/
-# 大文件
 *.tar.gz
-*.zip
-*.rar
