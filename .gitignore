@@ -48,3 +48,7 @@ coverage/
 .venv/
 venv/
 env/
+# ´óÎÄ¼ş
+*.tar.gz
+*.zip
+*.rar
