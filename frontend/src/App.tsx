@@ -84,15 +84,16 @@ const App: React.FC = () => {
           ticketsApi.list({ limit: 200 }),
           optimizationApi.getTop(200),
         ]);
-        const items = ticketRes.data.items || [];
-        const opts = optRes.data.suggestions || [];
+        const items = ticketRes.data?.items || [];
+        const opts = optRes.data?.suggestions || [];
         setTopSummary({
           total: items.length,
           p1: items.filter((t) => t.severity === 'high' && t.status !== 'closed').length,
           pending: items.filter((t) => t.status !== 'closed').length,
           optVerifying: opts.filter((s: any) => s.exec_status === 'verifying').length,
         });
-      } catch {
+      } catch (error) {
+        console.error('加载统计数据失败:', error);
         setTopSummary({ total: 0, p1: 0, pending: 0, optVerifying: 0 });
         message.warning('统计数据暂不可用，已切换为默认展示');
       }
