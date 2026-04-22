@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Boolean, Column, DateTime, Float, Integer, JSON, String, Text, Time
 from sqlalchemy.ext.declarative import declarative_base
@@ -178,6 +179,14 @@ class Ticket(Base):
     updated_at = Column(DateTime, default=datetime.utcnow, index=True)
     closed_at = Column(DateTime, nullable=True)
 
+    @staticmethod
+    def _safe_iso(value: Any) -> str | None:
+        if value is None:
+            return None
+        if hasattr(value, "isoformat"):
+            return value.isoformat()
+        return str(value)
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -189,14 +198,14 @@ class Ticket(Base):
             "reporter_id": self.reporter_id,
             "assignee_id": self.assignee_id,
             "eta_minutes": self.eta_minutes,
-            "due_at": self.due_at.isoformat() if self.due_at else None,
+            "due_at": self._safe_iso(self.due_at),
             "location": self.location,
             "asset_code": self.asset_code,
             "adopted_optimization_suggestion_id": self.adopted_optimization_suggestion_id,
             "adopted_optimization_note": self.adopted_optimization_note,
-            "created_at": self.created_at.isoformat() if self.created_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
-            "closed_at": self.closed_at.isoformat() if self.closed_at else None,
+            "created_at": self._safe_iso(self.created_at),
+            "updated_at": self._safe_iso(self.updated_at),
+            "closed_at": self._safe_iso(self.closed_at),
         }
 
 

@@ -23,24 +23,24 @@ const OpsCenterPage: React.FC = () => {
   const [selectedLog, setSelectedLog] = useState<OpsActionLogItem | null>(null);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [sceneScope, setSceneScope] = useState('单实验室');
-  const [sceneLocation, setSceneLocation] = useState('3教402');
+  const [sceneLocation, setSceneLocation] = useState('3-02');
 
   const incidentTemplates: Record<string, { severity: 'high' | 'medium' | 'low'; note: string }> = {
     classroom_outage: {
       severity: 'high',
-      note: '课堂中断模板：优先保障授课连续性，5分钟内到场，15分钟内升级中心值班老师。',
+      note: '课堂中断模板：优先保障授课连续性，5分钟内到场，15分钟内升级中心值班老师',
     },
     lab_offline: {
       severity: 'high',
-      note: '机房离线模板：先确认影响范围与交换机状态，必要时切换备用网络。',
+      note: '机房离线模板：先确认影响范围与交换机状态，必要时切换备用网络',
     },
     club_event_incident: {
       severity: 'medium',
-      note: '社团活动模板：保障直播链路优先，主备推流并行检查。',
+      note: '社团活动模板：保障直播链路优先，主备推流并行检查',
     },
     slow_query_burst: {
       severity: 'medium',
-      note: '慢查询激增模板：先限流热点接口，再排查Top SQL并执行索引优化。',
+      note: '慢查询激增模板：先限流热点接口，再排查Top SQL并执行索引优化',
     },
   };
 
@@ -120,7 +120,7 @@ const OpsCenterPage: React.FC = () => {
       onlineRate,
       classConflictRisk,
       impactedLabs: Math.max(0, instances.length - onlineCount),
-      clubEventRisk: classConflictRisk === 'high' ? '高' : classConflictRisk === 'medium' ? '中' : '低',
+      clubEventRisk: classConflictRisk === 'high' ? 'high' : classConflictRisk === 'medium' ? 'medium' : 'low',
     };
   }, [instances.length, onlineCount]);
 
@@ -134,7 +134,7 @@ const OpsCenterPage: React.FC = () => {
     <div className="fade-in">
       <Space direction="vertical" size={4} style={{ marginBottom: 12 }} className="page-header">
         <Title level={2} style={{ margin: 0 }}>机房运维中心（校园应急）</Title>
-        <Text type="secondary" className="page-subtitle">聚焦楼栋机房保障、授课冲突预警、社团活动保障的应急协作与留痕。</Text>
+        <Text type="secondary" className="page-subtitle">聚焦楼栋机房保障、授课冲突预警、社团活动保障的应急协作与留痕</Text>
       </Space>
 
       <Alert
@@ -142,7 +142,7 @@ const OpsCenterPage: React.FC = () => {
         type={campusOpsSummary.classConflictRisk === 'high' ? 'error' : campusOpsSummary.classConflictRisk === 'medium' ? 'warning' : 'info'}
         showIcon
         message={`授课冲突风险：${campusOpsSummary.classConflictRisk === 'high' ? '高' : campusOpsSummary.classConflictRisk === 'medium' ? '中' : '低'}`}
-        description={`当前机房在线率 ${campusOpsSummary.onlineRate}%，离线机房估计 ${campusOpsSummary.impactedLabs} 间。`}
+        description={`当前机房在线率：${campusOpsSummary.onlineRate}%，离线机房估计 ${campusOpsSummary.impactedLabs} 间。`}
       />
 
       <Row gutter={[16, 16]} style={{ marginTop: 8, marginBottom: 8 }}>
@@ -158,7 +158,7 @@ const OpsCenterPage: React.FC = () => {
         </Col>
         <Col xs={24} md={8}>
           <Card size="small">
-            <Statistic title="近24h应急动作" value={logs.length} valueStyle={{ color: '#4f46e5' }} />
+            <Statistic title="24h应急动作" value={logs.length} valueStyle={{ color: '#4f46e5' }} />
           </Card>
         </Col>
       </Row>
@@ -224,14 +224,14 @@ const OpsCenterPage: React.FC = () => {
                 <Input
                   value={sceneLocation}
                   onChange={(e) => setSceneLocation(e.target.value)}
-                  placeholder="输入故障位置，如3教402"
+                  placeholder="输入故障位置，如3-02"
                   style={{ width: 200 }}
                 />
                 <Select
                   value={sceneScope}
                   onChange={setSceneScope}
                   style={{ width: 150 }}
-                  options={[{ label: '单实验室', value: '单实验室' }, { label: '单楼层', value: '单楼层' }, { label: '跨楼栋', value: '跨楼栋' }]}
+                  options={[{ label: '单实验室', value: '单实验室' }, { label: '单楼栋', value: '单楼栋' }, { label: '跨楼栋', value: '跨楼栋' }]}
                 />
                 <Button type="primary" onClick={handleRunbook}>生成应急剧本</Button>
                 {runbook && (
@@ -243,7 +243,7 @@ const OpsCenterPage: React.FC = () => {
                         `- 严重级别: ${severity}`,
                         `- 影响范围: ${sceneScope}`,
                         `- 故障位置: ${sceneLocation || '-'}`,
-                        `- 当前完成度: ${runbookPercent}%`,
+                        `- 当前完成率: ${runbookPercent}%`,
                         '',
                         '## 处置步骤',
                         ...runbook.runbook.steps.map((s, i) => `${i + 1}. ${s}`),
@@ -268,7 +268,7 @@ const OpsCenterPage: React.FC = () => {
                     showIcon
                     type={severity === 'high' ? 'error' : 'warning'}
                     message="30分钟风险扩散预测"
-                    description={`若 ${sceneLocation || '当前区域'} 在30分钟内未完成处置，风险可能由${sceneScope}扩展至相邻教学/机房区域，建议立即执行升级链路并同步中心值班老师。`}
+                    description={`若${sceneLocation || '当前区域'} 在30分钟内未完成处置，风险可能由${sceneScope}扩展至相邻教学/机房区域，建议立即执行升级链路并同步中心值班老师。`}
                   />
                   <Space style={{ width: '100%', justifyContent: 'space-between' }}>
                     <Progress
@@ -342,7 +342,7 @@ const OpsCenterPage: React.FC = () => {
               value={timeRange}
               style={{ width: 140 }}
               onChange={(v) => setTimeRange(v as TimeRange)}
-              options={[{ label: '近1小时', value: '1h' }, { label: '近24小时', value: '24h' }, { label: '近7天', value: '7d' }, { label: '全部', value: 'all' }]}
+              options={[{ label: '1小时', value: '1h' }, { label: '24小时', value: '24h' }, { label: '7天', value: '7d' }, { label: '全部', value: 'all' }]}
             />
             <Input
               allowClear
