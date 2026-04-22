@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 from app.database import get_db
 from app.models.alert import Alert
 from app.models.database import Ticket, TicketEvent
@@ -17,10 +18,11 @@ async def get_active_alerts(
 ):
     """获取活跃告警"""
     try:
-        alerts = await db.execute(
-            Alert.__table__.select().where(Alert.status == "active")
+        result = await db.execute(
+            select(Alert).where(Alert.status == "active")
         )
-        return alerts.fetchall()
+        alerts = result.scalars().all()
+        return alerts
     except Exception as e:
         api_logger.error(f"Error getting active alerts: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"获取活跃告警失败: {str(e)}")
@@ -166,10 +168,11 @@ async def get_alerts(
 ):
     """获取告警列表"""
     try:
-        alerts = await db.execute(
-            Alert.__table__.select().offset(skip).limit(limit)
+        result = await db.execute(
+            select(Alert).offset(skip).limit(limit)
         )
-        return alerts.fetchall()
+        alerts = result.scalars().all()
+        return alerts
     except Exception as e:
         api_logger.error(f"Error getting alerts: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail=f"获取告警列表失败: {str(e)}")
